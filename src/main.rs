@@ -8,7 +8,7 @@ struct EnvConfig {
     bootstrap_node_secret_key: String,
     bootstrap_node_port: u16,
     client_id: String,
-    cluster_encryption_key: String,
+    cluster_key: String,
 }
 
 #[tokio::main]
@@ -26,8 +26,8 @@ async fn main() -> anyhow::Result<()> {
             .client_id
             .parse()
             .context("failed to parse `client_id`")?,
-        cluster_encryption_key: wcn_test_cluster::parse_encryption_key(&env.cluster_encryption_key)
-            .context("failed to parse `cluster_encryption_key`")?,
+        cluster_key: wcn_test_cluster::parse_cluster_key(&env.cluster_key)
+            .context("failed to parse `cluster_key`")?,
     };
 
     let _guard = wcn_test_cluster::run_cluster(cfg).await?;

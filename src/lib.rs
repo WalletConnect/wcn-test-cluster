@@ -31,7 +31,7 @@ pub struct Config {
     pub bootstrap_node_secret_key: Keypair,
     pub bootstrap_node_port: u16,
     pub client_id: PeerId,
-    pub cluster_encryption_key: EncryptionKey,
+    pub cluster_key: EncryptionKey,
 }
 
 #[derive(AsRef, Clone, Copy)]
@@ -82,7 +82,7 @@ pub async fn run_cluster(cfg: Config) -> anyhow::Result<ClusterGuard> {
 
     let provider = provider(signer, &anvil).await;
 
-    let encryption_key = cfg.cluster_encryption_key;
+    let cluster_key = cfg.cluster_key;
     let mut node_cfg = Some(cfg);
 
     let (mut operators, signals): (Vec<_>, Vec<_>) = (1..=5)
@@ -98,7 +98,9 @@ pub async fn run_cluster(cfg: Config) -> anyhow::Result<ClusterGuard> {
 
     let operators_on_chain = operators.iter().map(NodeOperator::on_chain).collect();
 
-    let cfg = DeploymentConfig { encryption_key };
+    let cfg = DeploymentConfig {
+        encryption_key: cluster_key,
+    };
 
     let cluster = Cluster::deploy(cfg, &provider, settings, operators_on_chain)
         .await
@@ -364,7 +366,7 @@ pub fn parse_secret_key(key: &str) -> anyhow::Result<Keypair> {
     Keypair::ed25519_from_bytes(key).map_err(Into::into)
 }
 
-pub fn parse_encryption_key(key: &str) -> anyhow::Result<EncryptionKey> {
+pub fn parse_cluster_key(key: &str) -> anyhow::Result<EncryptionKey> {
     let key = const_hex::decode(key)?[..].try_into()?;
     Ok(EncryptionKey(key))
 }

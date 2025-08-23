@@ -14,7 +14,7 @@ struct EnvConfig {
     client_namespace: String,
     bootstrap_node_id: String,
     bootstrap_node_port: u16,
-    cluster_encryption_key: String,
+    cluster_key: String,
 }
 
 #[tokio::main]
@@ -35,13 +35,12 @@ async fn main() -> anyhow::Result<()> {
 
     let keypair = wcn_test_cluster::parse_secret_key(&env.client_secret_key)
         .context("failed to parse `client_secret_key`")?;
-    let cluster_encryption_key =
-        wcn_test_cluster::parse_encryption_key(&env.cluster_encryption_key)
-            .context("failed to parse `cluster_encryption_key`")?;
+    let cluster_key = wcn_test_cluster::parse_cluster_key(&env.cluster_key)
+        .context("failed to parse `cluster_key`")?;
 
     let client = wcn_client::Client::new(wcn_client::Config {
         keypair,
-        cluster_encryption_key,
+        cluster_key,
         connection_timeout: Duration::from_secs(1),
         operation_timeout: Duration::from_secs(2),
         reconnect_interval: Duration::from_millis(100),
@@ -55,9 +54,6 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("client connection successful");
 
-    // Give some time for the client to open connections to the nodes.
-    tokio::time::sleep(Duration::from_secs(1)).await;
-
     let namespace = env.client_namespace.parse().unwrap();
 
     client
@@ -65,8 +61,8 @@ async fn main() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    let res = client.get(namespace, b"foo").await.unwrap();
-    assert_eq!(res, Some(b"bar".into()));
+    let rec = client.get(namespace, b"foo").await.unwrap().unwrap();
+    assert_eq!(rec.value, b"bar");
 
     tracing::info!("storage operations successful");
 
