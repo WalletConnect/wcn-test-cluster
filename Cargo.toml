@@ -4,13 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-wcn_logging = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "f0d619a" }
-wcn_node = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "f0d619a" }
-wcn_cluster = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "f0d619a", features = [
+wcn_logging = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "cedabf5" }
+wcn_node = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "cedabf5" }
+wcn_cluster = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "cedabf5", features = [
     "testing",
 ] }
-wcn_db = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "f0d619a" }
-wcn_rpc = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "f0d619a", features = [
+wcn_db = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "cedabf5" }
+wcn_rpc = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "cedabf5", features = [
     "client",
     "server",
 ] }
@@ -40,7 +40,7 @@ envy = { version = "0.4", default-features = false }
 base64 = { version = "0.22", default-features = false, features = ["std"] }
 
 [dev-dependencies]
-wcn_client = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "f0d619a" }
+wcn_client = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "cedabf5" }
 
 [[example]]
 name = "client"
