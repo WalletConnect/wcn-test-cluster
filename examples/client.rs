@@ -5,7 +5,7 @@ use {
         net::{Ipv4Addr, SocketAddrV4},
         time::Duration,
     },
-    wcn_client::{ClientBuilder as _, PeerAddr},
+    wcn_client::PeerAddr,
 };
 
 #[derive(Debug, Deserialize)]
@@ -13,6 +13,7 @@ struct EnvConfig {
     client_secret_key: String,
     client_namespace: String,
     bootstrap_node_id: String,
+    bootstrap_node_address: Ipv4Addr,
     bootstrap_node_port: u16,
     cluster_key: String,
 }
@@ -30,27 +31,33 @@ async fn main() -> anyhow::Result<()> {
 
     let bootstrap_node = PeerAddr {
         id: bootstrap_node_id,
-        addr: SocketAddrV4::new(Ipv4Addr::LOCALHOST, env.bootstrap_node_port),
+        addr: SocketAddrV4::new(env.bootstrap_node_address, env.bootstrap_node_port),
     };
+
+    tracing::info!(addr = ?bootstrap_node, "bootstrap node");
 
     let keypair = wcn_test_cluster::parse_secret_key(&env.client_secret_key)
         .context("failed to parse `client_secret_key`")?;
+
+    tracing::info!(peer_id = ?keypair.public().to_peer_id(), "client peer ID");
+
     let cluster_key = wcn_test_cluster::parse_cluster_key(&env.cluster_key)
         .context("failed to parse `cluster_key`")?;
 
-    let client = wcn_client::Client::new(wcn_client::Config {
+    let client = wcn_client::Client::builder(wcn_client::Config {
         keypair,
         cluster_key,
-        connection_timeout: Duration::from_secs(1),
-        operation_timeout: Duration::from_secs(2),
+        connection_timeout: Duration::from_secs(3),
+        operation_timeout: Duration::from_secs(5),
         reconnect_interval: Duration::from_millis(100),
         max_concurrent_rpcs: 5000,
+        max_idle_connection_timeout: Duration::from_secs(1),
+        max_retries: 2,
         nodes: vec![bootstrap_node],
-        metrics_tag: "mainnet",
     })
+    .build()
     .await
-    .context("failed to build client")?
-    .build();
+    .context("failed to build client")?;
 
     tracing::info!("client connection successful");
 
