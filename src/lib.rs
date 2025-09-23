@@ -9,7 +9,11 @@ use {
     futures::{StreamExt, stream},
     libp2p_identity::Keypair,
     metrics_exporter_prometheus::PrometheusRecorder,
-    std::{net::Ipv4Addr, thread, time::Duration},
+    std::{
+        net::{Ipv4Addr, SocketAddrV4, TcpListener},
+        thread,
+        time::Duration,
+    },
     tap::Pipe as _,
     wcn_cluster::{
         Cluster,
@@ -17,12 +21,7 @@ use {
         PeerId,
         Settings,
         node_operator,
-        smart_contract::{
-            self,
-            Read,
-            Signer,
-            evm::{self, RpcProvider},
-        },
+        smart_contract::evm::{self, RpcProvider, Signer},
     },
     wcn_rpc::server::ShutdownSignal,
 };
@@ -73,6 +72,8 @@ pub async fn run_cluster(cfg: Config) -> anyhow::Result<ClusterGuard> {
 
     let settings = Settings {
         max_node_operator_data_bytes: 4096,
+        event_propagation_latency: Duration::from_secs(1),
+        clock_skew: Duration::from_millis(100),
     };
 
     // Use Anvil's first key for deployment - convert PrivateKeySigner to our Signer
@@ -106,12 +107,12 @@ pub async fn run_cluster(cfg: Config) -> anyhow::Result<ClusterGuard> {
         .await
         .context("failed to deploy cluster")?;
 
-    let contract_address = cluster.smart_contract().address().unwrap();
+    let contract_address = cluster.smart_contract().address();
 
     operators
         .iter_mut()
         .flat_map(|operator| operator.nodes.as_mut_slice())
-        .for_each(|node| node.config.smart_contract_address = contract_address);
+        .for_each(|node| node.config.as_mut().unwrap().smart_contract_address = contract_address);
 
     stream::iter(&mut operators)
         .for_each_concurrent(5, NodeOperator::deploy)
@@ -124,11 +125,12 @@ pub async fn run_cluster(cfg: Config) -> anyhow::Result<ClusterGuard> {
 }
 
 struct NodeOperator {
-    signer: smart_contract::Signer,
+    signer: Signer,
     name: node_operator::Name,
     database: Database,
     nodes: Vec<Node>,
     clients: Vec<Client>,
+    _prometheus_recorder: PrometheusRecorder,
 }
 
 struct Client {
@@ -146,14 +148,14 @@ impl Client {
 }
 
 struct Database {
-    config: wcn_db::Config,
-    shutdown_signal: ShutdownSignal,
+    config: Option<wcn_db::Config>,
     thread_handle: Option<thread::JoinHandle<()>>,
+    _shutdown_signal: ShutdownSignal,
 }
 
 impl Database {
     fn deploy(&mut self) {
-        let fut = wcn_db::run(self.shutdown_signal.clone(), self.config.clone()).unwrap();
+        let fut = wcn_db::run(self.config.take().unwrap()).unwrap();
 
         self.thread_handle = Some(thread::spawn(move || {
             let _guard = tracing::info_span!("database").entered();
@@ -168,16 +170,15 @@ impl Database {
 
 struct Node {
     operator_id: node_operator::Id,
-    config: wcn_node::Config,
-    _prometheus_recorder: PrometheusRecorder,
-    _shutdown_signal: ShutdownSignal,
+    config: Option<wcn_node::Config>,
     thread_handle: Option<thread::JoinHandle<()>>,
+    _shutdown_signal: ShutdownSignal,
 }
 
 impl Node {
     async fn deploy(&mut self) {
         let operator_id = self.operator_id;
-        let fut = wcn_node::run(self.config.clone());
+        let fut = wcn_node::run(self.config.take().unwrap());
 
         let (tx, rx) = std::sync::mpsc::channel::<wcn_node::Result<()>>();
 
@@ -207,10 +208,22 @@ impl Node {
 
     fn on_chain(&self) -> wcn_cluster::Node {
         wcn_cluster::Node {
-            peer_id: self.config.keypair.public().to_peer_id(),
+            peer_id: self.config.as_ref().unwrap().keypair.public().to_peer_id(),
             ipv4_addr: Ipv4Addr::LOCALHOST,
-            primary_port: self.config.primary_rpc_server_port,
-            secondary_port: self.config.secondary_rpc_server_port,
+            primary_port: self
+                .config
+                .as_ref()
+                .unwrap()
+                .primary_rpc_server_socket
+                .port()
+                .unwrap(),
+            secondary_port: self
+                .config
+                .as_ref()
+                .unwrap()
+                .secondary_rpc_server_socket
+                .port()
+                .unwrap(),
         }
     }
 }
@@ -227,9 +240,9 @@ impl NodeOperator {
             .parse()
             .unwrap();
 
-        let smart_contract_signer = anvil.keys()[id as usize].to_bytes().pipe(|bytes| {
-            smart_contract::Signer::try_from_private_key(&const_hex::encode(bytes)).unwrap()
-        });
+        let smart_contract_signer = anvil.keys()[id as usize]
+            .to_bytes()
+            .pipe(|bytes| Signer::try_from_private_key(&const_hex::encode(bytes)).unwrap());
 
         let operator_id = *smart_contract_signer.address();
 
@@ -238,24 +251,35 @@ impl NodeOperator {
         let db_keypair = Keypair::generate_ed25519();
         let db_peer_id = db_keypair.public().to_peer_id();
 
+        let prometheus_recorder =
+            metrics_exporter_prometheus::PrometheusBuilder::new().build_recorder();
+
+        let db_primary_socket = wcn_rpc::server::Socket::new_high_priority(0).unwrap();
+        let db_primary_port = db_primary_socket.port().unwrap();
+        let db_secondary_socket = wcn_rpc::server::Socket::new_low_priority(0).unwrap();
+        let db_secondary_port = db_secondary_socket.port().unwrap();
+
         let db_config = wcn_db::Config {
             keypair: db_keypair,
-            primary_rpc_server_port: find_available_port(),
-            secondary_rpc_server_port: find_available_port(),
-            metrics_server_port: find_available_port(),
+            primary_rpc_server_socket: db_primary_socket,
+            secondary_rpc_server_socket: db_secondary_socket,
+            metrics_server_socket: new_tcp_socket(),
             connection_timeout: Duration::from_secs(1),
             max_connections: 1000,
             max_connections_per_ip: 1000,
             max_connection_rate_per_ip: 1000,
             max_concurrent_rpcs: 5000,
+            max_idle_connection_timeout: Duration::from_secs(1),
             rocksdb_dir: format!("/tmp/wcn_db/{db_peer_id}").parse().unwrap(),
             rocksdb: Default::default(),
+            shutdown_signal: shutdown_signal.clone(),
+            prometheus_handle: prometheus_recorder.handle(),
         };
 
         let database = Database {
-            config: db_config.clone(),
-            shutdown_signal: shutdown_signal.clone(),
+            config: Some(db_config),
             thread_handle: None,
+            _shutdown_signal: shutdown_signal.clone(),
         };
 
         let client_id = cfg
@@ -268,20 +292,22 @@ impl NodeOperator {
                 let (keypair, primary_rpc_server_port) = cfg
                     .take()
                     .map(|cfg| (cfg.bootstrap_node_secret_key, cfg.bootstrap_node_port))
-                    .unwrap_or_else(|| (Keypair::generate_ed25519(), find_available_port()));
-
-                let prometheus_recorder =
-                    metrics_exporter_prometheus::PrometheusBuilder::new().build_recorder();
+                    .unwrap_or_else(|| (Keypair::generate_ed25519(), 0));
+                let primary_rpc_server_socket =
+                    wcn_rpc::server::Socket::new_high_priority(primary_rpc_server_port).unwrap();
+                let secondary_rpc_server_socket =
+                    wcn_rpc::server::Socket::new_low_priority(0).unwrap();
 
                 let config = wcn_node::Config {
                     keypair,
-                    primary_rpc_server_port,
-                    secondary_rpc_server_port: find_available_port(),
-                    metrics_server_port: find_available_port(),
+                    primary_rpc_server_socket,
+                    secondary_rpc_server_socket,
+                    metrics_server_socket: new_tcp_socket(),
+                    max_idle_connection_timeout: Duration::from_secs(1),
                     database_rpc_server_address: Ipv4Addr::LOCALHOST,
                     database_peer_id: db_peer_id,
-                    database_primary_rpc_server_port: db_config.primary_rpc_server_port,
-                    database_secondary_rpc_server_port: db_config.secondary_rpc_server_port,
+                    database_primary_rpc_server_port: db_primary_port,
+                    database_secondary_rpc_server_port: db_secondary_port,
                     smart_contract_address,
                     smart_contract_signer: (n == 0).then_some(smart_contract_signer.clone()),
                     smart_contract_encryption_key: wcn_cluster::testing::encryption_key(),
@@ -292,8 +318,7 @@ impl NodeOperator {
 
                 Node {
                     operator_id,
-                    config,
-                    _prometheus_recorder: prometheus_recorder,
+                    config: Some(config),
                     _shutdown_signal: shutdown_signal.clone(),
                     thread_handle: None,
                 }
@@ -309,6 +334,7 @@ impl NodeOperator {
                 peer_id: client_id,
                 authorized_namespaces: vec![0, 1],
             }],
+            _prometheus_recorder: prometheus_recorder,
         }
     }
 
@@ -340,25 +366,8 @@ async fn provider(signer: Signer, anvil: &AnvilInstance) -> RpcProvider {
         .unwrap()
 }
 
-fn find_available_port() -> u16 {
-    use std::{
-        net::{TcpListener, UdpSocket},
-        sync::atomic::{AtomicU16, Ordering},
-    };
-
-    static NEXT_PORT: AtomicU16 = AtomicU16::new(48100);
-
-    loop {
-        let port = NEXT_PORT.fetch_add(1, Ordering::Relaxed);
-        assert!(port != u16::MAX, "failed to find a free port");
-
-        let is_udp_available = UdpSocket::bind((Ipv4Addr::LOCALHOST, port)).is_ok();
-        let is_tcp_available = TcpListener::bind((Ipv4Addr::LOCALHOST, port)).is_ok();
-
-        if is_udp_available && is_tcp_available {
-            return port;
-        }
-    }
+fn new_tcp_socket() -> TcpListener {
+    TcpListener::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).unwrap()
 }
 
 pub fn parse_secret_key(key: &str) -> anyhow::Result<Keypair> {
