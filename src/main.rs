@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
 
         let mut command = Command::new(exec);
 
-        command
+        let mut child = command
             .env("INTERNAL_DETACHED", "true")
             .stdin(Stdio::null())
             .stdout(Stdio::null())
@@ -57,7 +57,10 @@ async fn main() -> anyhow::Result<()> {
 
         test_connection(&client_env)
             .await
-            .context("failed to test client connection")?;
+            .context("failed to test client connection")
+            .inspect_err(|_| {
+                let _ = child.kill();
+            })?;
 
         Ok(())
     } else {
