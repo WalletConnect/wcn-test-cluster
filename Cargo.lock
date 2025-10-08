@@ -59,6 +59,18 @@ dependencies = [
  "thiserror 1.0.69",
  "tikv-jemalloc-ctl",
  "tikv-jemallocator",
+]
+
+[[package]]
+name = "alloc"
+version = "0.1.0"
+source = "git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f#3d7640f800fc15bfb9d5e2df6296bb442d398d1b"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tikv-jemalloc-ctl",
+ "tikv-jemallocator",
  "wc_metrics",
 ]
 
@@ -1449,7 +1461,7 @@ dependencies = [
 [[package]]
 name = "collections"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnect/utils-rs.git?tag=v0.14.1#bf8f50a711180afbf79b8c334c65b57886173d4b"
+source = "git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f#3d7640f800fc15bfb9d5e2df6296bb442d398d1b"
 
 [[package]]
 name = "const-hex"
@@ -2191,7 +2203,7 @@ checksum = "e6d5a32815ae3f33302d95fdcb2ce17862f8c65363dcfd29360480ba1001fc9c"
 [[package]]
 name = "future"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnect/utils-rs.git?tag=v0.14.1#bf8f50a711180afbf79b8c334c65b57886173d4b"
+source = "git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f#3d7640f800fc15bfb9d5e2df6296bb442d398d1b"
 dependencies = [
  "pin-project",
  "thiserror 1.0.69",
@@ -3207,16 +3219,6 @@ dependencies = [
 
 [[package]]
 name = "metrics"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3045b4193fbdc5b5681f32f11070da9be3609f189a79f3390706d42587f46bb5"
-dependencies = [
- "ahash",
- "portable-atomic",
-]
-
-[[package]]
-name = "metrics"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25dea7ac8057892855ec285c440160265225438c3c45072613c25a4b26e98ef5"
@@ -3233,7 +3235,7 @@ checksum = "2b166dea96003ee2531cf14833efedced545751d800f03535801d833313f8c15"
 dependencies = [
  "base64",
  "indexmap 2.10.0",
- "metrics 0.24.2",
+ "metrics",
  "metrics-util",
  "quanta",
  "thiserror 2.0.15",
@@ -3248,7 +3250,7 @@ dependencies = [
  "crossbeam-epoch",
  "crossbeam-utils",
  "hashbrown 0.15.5",
- "metrics 0.24.2",
+ "metrics",
  "quanta",
  "rand 0.9.2",
  "rand_xoshiro",
@@ -4744,7 +4746,7 @@ dependencies = [
 [[package]]
 name = "sharding"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "thiserror 2.0.15",
 ]
@@ -5736,7 +5738,15 @@ name = "wc"
 version = "0.1.0"
 source = "git+https://github.com/WalletConnect/utils-rs.git?tag=v0.14.1#bf8f50a711180afbf79b8c334c65b57886173d4b"
 dependencies = [
- "alloc",
+ "alloc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?tag=v0.14.1)",
+]
+
+[[package]]
+name = "wc"
+version = "0.1.0"
+source = "git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f#3d7640f800fc15bfb9d5e2df6296bb442d398d1b"
+dependencies = [
+ "alloc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
  "collections",
  "future",
  "wc_metrics",
@@ -5745,12 +5755,13 @@ dependencies = [
 [[package]]
 name = "wc_metrics"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnect/utils-rs.git?tag=v0.14.1#bf8f50a711180afbf79b8c334c65b57886173d4b"
+source = "git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f#3d7640f800fc15bfb9d5e2df6296bb442d398d1b"
 dependencies = [
  "arc-swap",
  "enum-ordinalize",
  "futures",
- "metrics 0.23.1",
+ "metrics",
+ "metrics-exporter-prometheus",
  "parking_lot",
  "pin-project",
  "smallvec",
@@ -5759,12 +5770,13 @@ dependencies = [
 [[package]]
 name = "wcn_client"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "arc-swap",
  "derive-where",
  "derive_more",
  "futures",
+ "futures-concurrency",
  "libp2p-identity",
  "rand 0.9.2",
  "ring",
@@ -5773,7 +5785,7 @@ dependencies = [
  "thiserror 2.0.15",
  "tokio",
  "tracing",
- "wc",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
  "wcn_cluster",
  "wcn_cluster_api",
  "wcn_rpc",
@@ -5783,11 +5795,13 @@ dependencies = [
 [[package]]
 name = "wcn_cluster"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "aes",
  "alloy",
+ "anyhow",
  "arc-swap",
+ "base64",
  "const-hex",
  "derive-where",
  "derive_more",
@@ -5798,6 +5812,7 @@ dependencies = [
  "libp2p-identity",
  "multihash",
  "postcard",
+ "rand 0.9.2",
  "serde",
  "serde_json",
  "sharding",
@@ -5814,7 +5829,7 @@ dependencies = [
 [[package]]
 name = "wcn_cluster_api"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "derive-where",
  "derive_more",
@@ -5825,7 +5840,7 @@ dependencies = [
  "tap",
  "thiserror 2.0.15",
  "tracing",
- "wc",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
  "wcn_cluster",
  "wcn_rpc",
 ]
@@ -5833,7 +5848,7 @@ dependencies = [
 [[package]]
 name = "wcn_db"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "anyhow",
  "axum",
@@ -5843,8 +5858,6 @@ dependencies = [
  "futures",
  "futures-concurrency",
  "libp2p-identity",
- "metrics 0.24.2",
- "metrics-exporter-prometheus",
  "proc-mounts",
  "serde",
  "sysinfo 0.37.0",
@@ -5855,8 +5868,10 @@ dependencies = [
  "tracing",
  "vergen",
  "vergen-pretty",
- "wc",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
  "wcn_logging",
+ "wcn_metrics",
+ "wcn_metrics_api",
  "wcn_rocks",
  "wcn_rpc",
  "wcn_storage_api",
@@ -5866,7 +5881,7 @@ dependencies = [
 [[package]]
 name = "wcn_logging"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "tracing",
  "tracing-appender",
@@ -5874,9 +5889,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "wcn_metrics"
+version = "0.1.0"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
+dependencies = [
+ "derive-where",
+ "derive_more",
+ "futures",
+ "futures-concurrency",
+ "libp2p-identity",
+ "sysinfo 0.37.0",
+ "tap",
+ "tokio",
+ "tracing",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
+ "wcn_cluster",
+ "wcn_metrics_api",
+]
+
+[[package]]
+name = "wcn_metrics_api"
+version = "0.1.0"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
+dependencies = [
+ "derive_more",
+ "serde",
+ "strum",
+ "thiserror 2.0.15",
+ "wcn_rpc",
+]
+
+[[package]]
 name = "wcn_migration"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "anyhow",
  "backoff",
@@ -5896,7 +5942,7 @@ dependencies = [
 [[package]]
 name = "wcn_node"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "anyhow",
  "axum",
@@ -5907,8 +5953,6 @@ dependencies = [
  "futures",
  "futures-concurrency",
  "libp2p-identity",
- "metrics 0.24.2",
- "metrics-exporter-prometheus",
  "serde",
  "sysinfo 0.37.0",
  "tap",
@@ -5918,10 +5962,12 @@ dependencies = [
  "tracing",
  "vergen",
  "vergen-pretty",
- "wc",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
  "wcn_cluster",
  "wcn_cluster_api",
  "wcn_logging",
+ "wcn_metrics",
+ "wcn_metrics_api",
  "wcn_migration",
  "wcn_replication",
  "wcn_rpc",
@@ -5932,7 +5978,7 @@ dependencies = [
 [[package]]
 name = "wcn_replication"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "derive-where",
  "futures",
@@ -5942,7 +5988,7 @@ dependencies = [
  "thiserror 2.0.15",
  "tokio",
  "tracing",
- "wc",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
  "wcn_cluster",
  "wcn_storage_api",
  "xxhash-rust",
@@ -5951,7 +5997,7 @@ dependencies = [
 [[package]]
 name = "wcn_rocks"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -5960,7 +6006,6 @@ dependencies = [
  "futures",
  "itertools 0.14.0",
  "linemux",
- "metrics 0.24.2",
  "postcard",
  "rocksdb",
  "serde",
@@ -5968,12 +6013,13 @@ dependencies = [
  "thiserror 2.0.15",
  "tokio",
  "tracing",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
 ]
 
 [[package]]
 name = "wcn_rpc"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "bytes",
  "derive-where",
@@ -5983,7 +6029,6 @@ dependencies = [
  "governor",
  "libp2p-identity",
  "libp2p-tls",
- "metrics 0.24.2",
  "mini-moka",
  "nix",
  "pin-project",
@@ -6001,14 +6046,14 @@ dependencies = [
  "tokio-serde",
  "tokio-util",
  "tracing",
- "wc",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
  "wcn_rpc_derive",
 ]
 
 [[package]]
 name = "wcn_rpc_derive"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6018,7 +6063,7 @@ dependencies = [
 [[package]]
 name = "wcn_storage_api"
 version = "0.1.0"
-source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=603a1fc#603a1fc7661f68a8100eb9b2d224d89abdcf4e84"
+source = "git+https://github.com/WalletConnectFoundation/wcn.git?rev=abe1856#abe1856acb36b730c044b67cf5d706b8546a41e1"
 dependencies = [
  "const-hex",
  "derive-where",
@@ -6031,7 +6076,7 @@ dependencies = [
  "thiserror 2.0.15",
  "time",
  "tracing",
- "wc",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?rev=3d7640f)",
  "wcn_rpc",
 ]
 
@@ -6052,7 +6097,7 @@ dependencies = [
  "tap",
  "tokio",
  "tracing",
- "wc",
+ "wc 0.1.0 (git+https://github.com/WalletConnect/utils-rs.git?tag=v0.14.1)",
  "wcn_client",
  "wcn_cluster",
  "wcn_db",

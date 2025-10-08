@@ -4,17 +4,17 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-wcn_logging = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "603a1fc" }
-wcn_node = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "603a1fc" }
-wcn_cluster = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "603a1fc", features = [
+wcn_logging = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "abe1856" }
+wcn_node = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "abe1856" }
+wcn_cluster = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "abe1856", features = [
     "testing",
 ] }
-wcn_db = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "603a1fc" }
-wcn_rpc = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "603a1fc", features = [
+wcn_db = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "abe1856" }
+wcn_rpc = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "abe1856", features = [
     "client",
     "server",
 ] }
-wcn_client = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "603a1fc" }
+wcn_client = { git = "https://github.com/WalletConnectFoundation/wcn.git", rev = "abe1856" }
 wc = { git = "https://github.com/WalletConnect/utils-rs.git", tag = "v0.14.1", default-features = false, features = [
     "alloc",
 ] }

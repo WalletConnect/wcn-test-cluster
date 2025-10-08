@@ -123,6 +123,7 @@ async fn test_connection(env: &ClientConfig) -> anyhow::Result<()> {
         max_idle_connection_timeout: Duration::from_secs(1),
         max_retries: 2,
         nodes: vec![bootstrap_node],
+        trusted_operators: Default::default(),
     })
     .build()
     .await
