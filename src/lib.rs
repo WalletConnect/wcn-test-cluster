@@ -210,6 +210,7 @@ impl Node {
         wcn_cluster::Node {
             peer_id: self.config.as_ref().unwrap().keypair.public().to_peer_id(),
             ipv4_addr: Ipv4Addr::LOCALHOST,
+            private_ipv4_addr: None,
             primary_port: self
                 .config
                 .as_ref()
