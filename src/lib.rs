@@ -47,6 +47,8 @@ impl wcn_cluster::Config for DeploymentConfig {
     fn new_node(&self, _operator_id: node_operator::Id, node: wcn_cluster::Node) -> Self::Node {
         node
     }
+
+    fn update_settings(&self, _: &Settings) {}
 }
 
 pub struct ClusterGuard {
@@ -74,6 +76,7 @@ pub async fn run_cluster(cfg: Config) -> anyhow::Result<ClusterGuard> {
         max_node_operator_data_bytes: 4096,
         event_propagation_latency: Duration::from_secs(1),
         clock_skew: Duration::from_millis(100),
+        ..Default::default()
     };
 
     // Use Anvil's first key for deployment - convert PrivateKeySigner to our Signer
